@@ -156,9 +156,6 @@ def Execute(data): #TO EDIT
     global sPath
     global sCurrCustomer
 
-    global arrSInventory
-    global arrPInventory
-
     #   CODE
     if (data.IsChatMessage() and data.IsFromTwitch()):
         points4Messages(data.User, data.Message)
@@ -166,56 +163,18 @@ def Execute(data): #TO EDIT
         heist(data)
     return
 
-def points4Messages(sUser, sMessage):
-    global sPath
-
-    global arrSInventory
-    global arrPInventory
-
+def points4Messages(user, message):
     try:
         #   STEP 1: EGG
-        if (sMessage == "I am steak"):
+        if (message == "I am steak"):
             Parent.SendTwitchMessage("VoHiYo")
 
-            if (sUser == "i_am_steak"):
-                Parent.AddPoints(sUser, 500)
+            if (user == "i_am_steak"):
+                Parent.AddPoints(user, 500)
 
         #   STEP 2: POINTS PER CHAT MESSAGE
-        if (sMessage[0] != '!'):
-            if (sUser not in arrSInventory):
-                newCustomer = Player()
-                newCustomer.refreshPlayer(sUser, sPath)
-                newCustomer.iInvMenu = 0
-
-                arrPInventory.append(newCustomer)
-                arrSInventory.append(sUser)
-
-            tmpCustard = arrPInventory[arrSInventory.index(sUser)]
-
-            #   STEP 2.1: First message payout
-            if (tmpCustard.bFirstMsg == False):
-                tmpCustard.changeMsg()
-                iTmp = tmpCustard.iPlayerStats[14]
-                if (iTmp != 0):
-                    if (iTmp > 0):
-                        Parent.AddPoints(sUser, iTmp)
-                    else:
-                        Parent.RemovePoints(sUser, iTmp)
-
-            #   STEP 2.2: Possible message payout
-            iTmp = tmpCustard.iPlayerStats[15]
-            if (iTmp > 0):
-                iTmp2 = rand.randint(0, 200)
-                if (iTmp2 <= iTmp):
-                    Parent.AddPoints(sUser, 2)
-
-            #   STEP 2.3: Static message payout
-            iTmp = 1 + tmpCustard.iPlayerStats[16]
-            if (iTmp > 0):
-                Parent.AddPoints(sUser, iTmp)
-            else:
-                Parent.RemovePoints(sUser, -1*iTmp)
-
+        if (message[0] != '!'):
+            Parent.AddPoints(user, rand.randint(3, 10))
 
     except Exception as e:
         Parent.SendTwitchWhisper("i_am_steak", e.message)
