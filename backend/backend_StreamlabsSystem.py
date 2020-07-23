@@ -95,8 +95,6 @@ def Init():
     """
 
     #   GLOBALS
-    global sPath
-
     global tTickCD
     global tLastTick
 
@@ -151,11 +149,7 @@ def Execute(data): #TO EDIT
         Twitch IRC. This function will _not_ be called when the user disabled the script
         with the switch on the user interface.
     """
-
-    #   GLOBALS
-    global sPath
-    global sCurrCustomer
-
+    
     #   CODE
     if (data.IsChatMessage() and data.IsFromTwitch()):
         points4Messages(data.User, data.Message)
