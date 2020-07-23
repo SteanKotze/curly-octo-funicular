@@ -1,0 +1,33 @@
+ITEM NAME
+HEIST:
+> self death chance
+> self payout % on win
+> self static payout on win
+> self static payout
+> team death chance
+> team payout % on win
+> team static payout on win
+> team static payout
+1V1:
+> self death chance
+> self payout % on win
+> self static payout on win
+> self static payout
+BOTH:
+> %chance to recover % of money on death
+> recover % of money on death
+OTHER:
+DONE > points for 1st message 								- 14
+DONE > % chance to get static points on chat msg 			- 15
+DONE > static points on chat msg 							- 16
+DONE > item cost											- 17
+> chance of secret room
+> number of items in secret room
+> chance of succesfull theft
+> damage on theft
+> time on thievery list
+STATS:
+- Price
+- Tier
+- Position
+- Description
