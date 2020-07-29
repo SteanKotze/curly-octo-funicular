@@ -126,10 +126,10 @@ def Init():
     recFish2 = ""
 
     iHeistLim = 15
-    iHeistTmr1 = 120                                                                               #time between heists
+    iHeistTmr1 = 600                                                                               #time between heists
     tHeistTmr1 = t.time()
     bHeistTmr1 = False
-    iHeistTmr2 = 600                                                                                 #time before heist starts
+    iHeistTmr2 = 60                                                                                 #time before heist starts
     tHeistTmr2 = t.time()
     bHeistTmr2 = False
 
@@ -324,10 +324,6 @@ def heistTick():
         bHeistTmr2 = False
         tHeistTmr1 = t.time() + iHeistTmr1
         bHeistTmr1 = True
-
-        sTmp = "The heist has begun! Everyone gets ready with their various duties and checks their equipment before hopping out of the van and heading into the bank!"
-        Parent.SendTwitchMessage(sTmp)
-        Parent.SendDiscordMessage(sTmp)
 
         sList = []
         dList = []
