@@ -129,7 +129,7 @@ def Init():
     iHeistTmr1 = 120                                                                               #time between heists
     tHeistTmr1 = t.time()
     bHeistTmr1 = False
-    iHeistTmr2 = 60                                                                                 #time before heist starts
+    iHeistTmr2 = 600                                                                                 #time before heist starts
     tHeistTmr2 = t.time()
     bHeistTmr2 = False
 
@@ -261,7 +261,7 @@ def heist(data):
 
                         if (len(lHeisters) > 1):
                             sTmp2 = data.User + " has joined the heist with " + str(iTmp) + " TiltCoins!"
-                            Parent.SendTwitchMessage(sTmp2)
+                            Parent.SendTwitchWhisper(data.User, sTmp)
                             Parent.SendDiscordMessage(sTmp2)
 
             except:
