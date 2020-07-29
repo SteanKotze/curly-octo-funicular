@@ -261,7 +261,7 @@ def heist(data):
 
                         if (len(lHeisters) > 1):
                             sTmp2 = data.User + " has joined the heist with " + str(iTmp) + " TiltCoins!"
-                            Parent.SendTwitchWhisper(data.User, sTmp)
+                            Parent.SendTwitchWhisper(data.User, sTmp2)
                             Parent.SendDiscordMessage(sTmp2)
 
             except:
