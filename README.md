@@ -9,7 +9,9 @@ This library is standalone and only requires python scripting to be enabled in y
 To install this library navigate to your streamlabs chatbot scripts folder. Once there clone the respository.
 
 # Usage
-This library can be used primarily through the twitch chat interface using the following commands.
+This library can be used primarily through the twitch chat interface. Once the repository has been cloned go to your `<script>` tab in your chatbot. Once there click on the backend script and ensure that it is activated. Then adjust the settings as you see fit and save the settings. After saving the settings reload the scripts and you should be ready to go.
+
+The following commands can then be used:
 
 ## Heist
 ```

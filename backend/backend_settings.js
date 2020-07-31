@@ -1,9 +1,12 @@
 ﻿var settings = {
-  "Heist Join Time": 120.0,
-  "Heist Cooldown": 600.0,
-  "Heist Payout": "1.25",
-  "Fish Minimum Value": 10.0,
-  "Fish Maximum Value": 40.0,
-  "Fish Catch Chance": "0.25",
-  "Fish permission": "Tiltasaurus,I_am_steak"
+  "heist_join_time": 120.0,
+  "heist_cooldown": 600.0,
+  "heist_payout": "1.25",
+  "heist_user_limit": 15.0,
+  "fish_minimum_value": 10.0,
+  "fish_maximum_value": 40.0,
+  "fish_catch_chance": "0.25",
+  "fish_permission": "Tiltasaurus,I_am_steak",
+  "points_per_message": 5.0,
+  "tick_refresh_rate": 5.0
 };
