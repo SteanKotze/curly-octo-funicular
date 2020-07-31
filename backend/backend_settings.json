@@ -1,0 +1,9 @@
+﻿{
+  "heist join time": 120.0,
+  "heist cooldown": 600.0,
+  "heist payout": "1.25",
+  "fish minimum value": 10.0,
+  "fish maximum value": 40.0,
+  "fish catch chance": "0.25",
+  "fish permission": "Tiltasaurus,I_am_steak"
+}

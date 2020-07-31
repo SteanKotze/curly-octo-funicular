@@ -13,14 +13,14 @@ import time as t
 ScriptName = "backend script"
 Website = "https://github.com/SteanKotze/curly-octo-funicular"
 Creator = "I_am_steak"
-Version = "0.1"
+Version = "0.2"
 Description = "This script are do many heist (/O.O)/"
 
 #---------------------------------------
 #   Set Variables
 #---------------------------------------
-SettingsFile = os.path.join(os.path.dirname(__file__), "FSSettings.json")
-ScriptSettings = None                                                                                                   #Settings to be used from chatbot interface
+settings_path = "Services\\Scripts\\backend\\backend_settings.json"
+settings = None
     
 #timer related
 tTickCD = None                                                                                                          #the cooldown for tick()
@@ -48,43 +48,6 @@ lHCChance = None                                                                
 deaths = None
 
 #---------------------------------------
-#   Classes
-#---------------------------------------
-class Settings(object):
-    """
-        Load in saved settings file if available else set default values.
-    """
-    def __init__(self, settingsfile=None):
-        try:
-            with codecs.open(SettingsFile, encoding="utf-8-sig", mode="r") as f:
-                self.__dict__ = json.load(f, encoding="utf-8")
-            self.initSuccess = True
-        except:
-            # load in variables from .json file if it fails to load
-            self.initSuccess = False
-
-
-    def reload(self, jsondata):
-        """
-            Reload settings from Chatbot user interface by given json data.
-        """
-        self.__dict__ = json.loads(jsondata, encoding="utf-8")
-        return
-
-    def save(self, settingsfile):
-        """
-            Save settings contained within to .json and .js settings files.
-        """
-        try:
-            with codecs.open(SettingsFile, encoding="utf-8-sig", mode="w+") as f:
-                json.dump(self.__dict__, f, encoding="utf-8")
-            with codecs.open(SettingsFile.replace("json", "js"), encoding="utf-8-sig", mode="w+") as f:
-                f.write("var settings = {0};".format(json.dumps(self.__dict__, encoding='utf-8')))
-        except:
-            Parent.Log(ScriptName, "Failed to save settings to file.")
-        return
-
-#---------------------------------------
 #   [Required] Intialize Data 
 #---------------------------------------
 def Init():
@@ -95,6 +58,9 @@ def Init():
     """
 
     #   GLOBALS
+    global settings_path
+    global settings
+    
     global tTickCD
     global tLastTick
 
@@ -118,6 +84,9 @@ def Init():
     global deaths
 
     #   CODE
+    with codecs.open(settings_path, encoding="utf-8-sig", mode="r") as settings_file:
+        settings = json.load(settings_file, encoding="utf-8")
+        
     tTickCD = 5                                                                                                         #set tick cooldown to 5 s
     tLastTick = t.time() - tTickCD
 
@@ -151,6 +120,8 @@ def Execute(data): #TO EDIT
     """
     
     #   CODE
+    global settings
+    Parent.SendTwitchWhisper("i_am_steak", str(settings))
     if (data.IsChatMessage() and data.IsFromTwitch()):
         points4Messages(data.User, data.Message)
         fish(data)
@@ -476,3 +447,7 @@ def heistTick():
         lHInput = []
 
     return
+
+#--
+#
+#--

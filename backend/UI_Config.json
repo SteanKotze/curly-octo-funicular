@@ -1,3 +1,66 @@
 {
-	"output_file": "MerchSettings.json"
+	"output_file": "backend_settings.json",
+  "Heist Join Time": {
+    "type": "slider",
+    "value": 120,
+    "min": 60,
+    "max": 180,
+    "ticks": 1,
+    "label": "Time to join heist (seconds)",
+    "tooltip": "How long chat has to join the heist before the heist starts.",
+    "group": "Heist"
+  },
+  "Heist Cooldown": {
+    "type": "slider",
+    "value": 600,
+    "min": 180,
+    "max": 1800,
+    "ticks": 1,
+    "label": "Time for heist to refresh (seconds)",
+    "tooltip": "How long after a heist before chat can heist again.",
+    "group": "Heist"
+  },
+  "Heist Payout": {
+    "type": "dropdown",
+    "value": 1.25,
+    "items": [1.0,1.05,1.1,1.2,1.25,1.3,1.35,1.4,1.45,1.5],
+    "label": "Payout",
+    "tooltip": "The total payout of the heist will be the in put of the viewers times this value.",
+    "group": "Heist"
+  },
+  "Fish Minimum Value": {
+    "type": "slider",
+    "value": 10,
+    "min": 0,
+    "max": 100,
+    "ticks": 1,
+    "label": "Minimum fish payout (channel points)",
+    "tooltip": "The minimum amount of points a viewer can get for catching a fish.",
+    "group": "Fish"
+  },
+  "Fish Maximum Value": {
+    "type": "slider",
+    "value": 40,
+    "min": 1,
+    "max": 200,
+    "ticks": 1,
+    "label": "Maximum fish payout (channel points)",
+    "tooltip": "The maximum amount of points a viewer can get for catching a fish.",
+    "group": "Fish"
+  },
+  "Fish Catch Chance": {
+    "type": "dropdown",
+    "value": 0.25,
+    "items": [0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7],
+    "label": "Catch Chance ( % )",
+    "tooltip": "The percentage chance a user has of catching a fish during the event.",
+    "group": "Fish"
+  },
+  "Fish permission": {
+    "type": "textbox",
+    "value": "Tiltasaurus,I_am_steak",
+    "label": "Start/stop event.",
+    "tooltip": "The users that can start and stop the fish events.",
+    "group": "Fish"
+  }
 }
