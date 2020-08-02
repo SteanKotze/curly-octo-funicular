@@ -36,6 +36,7 @@ fish_size_record = None
 fish_user_record = None 
 
 #heist related
+heist_payout = None
 heist_user_limit = None
 heist_cooldown = None                                                                                                       #time between heists
 next_heist_start_time = None                                                                                                       #timer till next heist
@@ -217,6 +218,7 @@ def fish(data):
     return
 
 def heist(data):
+    global heist_payout
     global heist_user_limit
     global heist_cooldown
     global next_heist_start_time
@@ -307,111 +309,94 @@ def heistTick():
         Parent.SendDiscordMessage(response_string)
 
     elif ((heist_start_time_active == True) and (t.time() > heist_start_time)):
+        rand.seed(t.time() + len(heisters))
+
         heist_start_time_active = False
         next_heist_start_time = t.time() + heist_cooldown
         heist_active = True
 
-        sList = []
-        dList = []
+        successful_heisters = []
+        dead_heisters = []
+        heist_stats = "Heist stats: "
 
-        rand.seed(t.time() + len(heisters))
-        iTmp = 0
-
-        sOut = "Heist stats: "
         for i in range(0, len(heisters)):
-            iTmp = rand.randint(0, 200)
-            sOut = sOut + " #" + heisters[i] + " - " + str(iTmp)
-            rand.seed(iTmp + t.time())
+            heist_dice_roll = rand.randint(0, 200)
+            heist_stats = heist_stats + " #" + heisters[i] + " - " + str(heist_dice_roll)
 
-            if (heisters[i] in previous_heisters):                                                                              #check if modified win chance
+            if (heisters[i] in previous_heisters):
                 j = 0
                 for j in range(0, len(previous_heisters)):
                     if (previous_heisters[j] == heisters[i]):
                         break
 
-                iTmp2 = previous_heisters_chance[j]
-                sOut = sOut + "," + str(iTmp2) 
+                heist_failure_chance = previous_heisters_chance[j]
+                heist_stats = heist_stats + "," + str(heist_failure_chance)
 
-                if (iTmp > iTmp2):
-                    sList.append(heisters[i])                                                                          #success achieved
+                if (heist_dice_roll > heist_failure_chance):
+                    successful_heisters.append(heisters[i])
 
-                    if ((iTmp2 > 50) and (iTmp2 < 70)):                                                                 #reduce percent to win by 5%
-                        iTmp2 = iTmp2 + 5
-                        previous_heisters_chance[j] = iTmp2
-                        sOut = sOut + ",1"
+                    if ((heist_failure_chance >= 50) and (heist_failure_chance < 80)):
+                        previous_heisters_chance[j] = heist_failure_chance + 5
+                        heist_stats = heist_stats + ",1"
 
-                    elif (iTmp2 < 50):                                                                                  #reset win chances
-                        if (len(previous_heisters) > 1):
-                            previous_heisters = previous_heisters[0:j] + previous_heisters[j+1:] 
-                            previous_heisters_chance = previous_heisters_chance[0:j] + previous_heisters_chance[j+1:]
-                            sOut = sOut + ",2"
-
-                        else:
-                            previous_heisters = []
-                            previous_heisters_chance = []
-                            sOut = sOut + ",3"
+                    elif (heist_failure_chance < 50):
+                        previous_heisters_chance[j] = 50
+                        heist_stats = heist_stats + ",2"
 
                 else:
-                    dList.append(heisters[i])
+                    dead_heisters.append(heisters[i])
 
-                    if ((iTmp2 < 50) and (iTmp2 > 20)):                                                                 #reduce chance to lose by 10%
-                        iTmp2 = iTmp2 - 10
-                        previous_heisters_chance[j] = iTmp2
-                        sOut = sOut + ",4"
+                    if ((heist_failure_chance <= 50) and (heist_failure_chance > 20)):
+                        previous_heisters_chance[j] = heist_failure_chance - 10
+                        heist_stats = heist_stats + ",3"
 
-                    elif (iTmp2 > 50):                                                                                  #reset win chances
-                        if (len(previous_heisters) > 1):
-                            previous_heisters = previous_heisters[0:j] + previous_heisters[j+1:] 
-                            previous_heisters_chance = previous_heisters_chance[0:j] + previous_heisters_chance[j+1:]
-                            sOut = sOut + ",5"
-
-                        else:
-                            previous_heisters = []
-                            previous_heisters_chance = []
-                            sOut = sOut + ",6"
+                    elif (heist_failure_chance > 50):
+                        previous_heisters_chance[j] = 50
+                        heist_stats = heist_stats + ",4"
 
             else: 
                 previous_heisters.append(heisters[i])
+                heist_stats = heist_stats + ",50"
 
-                if (iTmp > 50):
-                    sList.append(heisters[i])
+                if (heist_dice_roll > 50):
+                    successful_heisters.append(heisters[i])
                     previous_heisters_chance.append(55)
+                    heist_stats = heist_stats + ",5"
 
                 else:
-                    dList.append(heisters[i])
+                    dead_heisters.append(heisters[i])
                     previous_heisters_chance.append(40)
+                    heist_stats = heist_stats + ",6"
 
-        Parent.SendTwitchWhisper("i_am_steak", sOut)
-        Parent.SendTwitchWhisper("i_am_not_steak", sOut)
+        Parent.SendTwitchWhisper("i_am_steak", heist_stats)
 
-        if (len(sList) > 0):
-            iTot = 0                                                                                #get total input currency
+        if (len(successful_heisters) > 0):
+            total_heist_input = 0
             for i in range(0, len(heisters_inputs)):
-                iTot = iTot + heisters_inputs[i]
+                total_heist_input = total_heist_input + heisters_inputs[i]
 
-            iTot = int(iTot * 1.25)
+            total_heist_input = int(total_heist_input * heist_payout)
 
-            iSus = 0                                                                                #get total input currency of succesful
+            total_successful_heist_input = 0
             for i in range(0, len(heisters)):
-                if (heisters[i] in sList):
-                    iSus = iSus + heisters_inputs[i]
+                if (heisters[i] in successful_heisters):
+                    total_successful_heist_input = total_successful_heist_input + heisters_inputs[i]
 
-            sTmp = "Some of the crew got out of the bank with the loot! The results are: "
+            response_string = "Some of the crew got out of the bank with the loot! The results are: "
             j = 0
             for i in range(0, len(heisters)):
-
-                if (heisters[i] in sList):
-                    iTmp = int((float(heisters_inputs[i])/iSus)*iTot)
-                    Parent.AddPoints(heisters[i], iTmp)
-                    sTmp = sTmp + heisters[i] + " (" + str(iTmp) + ")"
+                if (heisters[i] in successful_heisters):
+                    heister_payout = int((float(heisters_inputs[i])/total_successful_heist_input)*total_heist_input)
+                    Parent.AddPoints(heisters[i], heister_payout)
+                    response_string = response_string + heisters[i] + " (" + str(heister_payout) + ")"
                     j = j + 1
-                    if (j < len(sList)):
-                        sTmp = sTmp + " - "
+                    if (j < len(successful_heisters)):
+                        response_string = response_string + " - "
 
-            Parent.SendTwitchMessage(sTmp)
-            Parent.SendDiscordMessage(sTmp)
+            Parent.SendTwitchMessage(response_string)
+            Parent.SendDiscordMessage(response_string)
 
-        if (len(dList) > 0):
+        if (len(dead_heisters) > 0):
             deaths = [" forgot how explosives worked leading to a \"tiny\" accident with the opening of the vault. The following crew members seem to have miraculously dissapeared: ",
                         " forgot to put a silencer on their gun causing a firefight amonst the crew and the bank guards. The following crew members were shot and killed: ",
                         " thought that carrying rocket launchers, guns, and explosives into a bank would go unnoticed causing a firefight amongst the crew and the bank guard. The following crew members were shot and killed: ",
@@ -420,43 +405,41 @@ def heistTick():
                         "Upon exiting the bank with the loot a team of SWAT snipers opened fire on the crew, the following crew members died in the comotion: ",
                         "It seems one of the crew ratted us out and the cops knew we were coming, the following crew members were apprehended in the ambush: ",
                         " tilted their teammates causing the following crew members to give up on the heist: "]
+            
+            death_message_index = rand.randint(0, 2*(len(deaths) - 1)) - 1
+            death_message = deaths[death_message_index]
 
-            rand.seed(len(dList) + t.time())
-            iTmp = rand.randint(0, 2*(len(deaths)-1)) - 1
-            sTmp = deaths[iTmp]
+            if (death_message_index < 4):
+                death_cause = rand.randint(0, 2*len(heisters))
+                death_message = heisters[i] + death_message
 
+                for i in range(0, len(dead_heisters)):
+                    death_message = death_message + dead_heisters[i]
+                    if (i < len(dead_heisters) - 1):
+                        death_message = death_message + ", "
 
-            if (iTmp < 4):
-                rand.seed(iTmp + t.time())
-                iTmp = rand.randint(0, 2*len(heisters))
-                sTmp = heisters[i] + sTmp
+                Parent.SendTwitchMessage(death_message)
+                Parent.SendDiscordMessage(death_message)
 
-                for i in range(0, len(dList)):
-                    sTmp = sTmp + dList[i]
-                    if (i < len(dList) - 1):
-                        sTmp = sTmp + ", "
+            elif (death_message_index < 7):
+                for i in range(0, len(dead_heisters)):
+                    death_message = death_message + dead_heisters[i] 
+                    if (i < len(dead_heisters) - 1):
+                        death_message = death_message + ", "
 
-                Parent.SendTwitchMessage(sTmp)
-                Parent.SendDiscordMessage(sTmp)
-
-            elif (iTmp < 7):
-                for i in range(0, len(dList)):
-                    sTmp = sTmp + dList[i] 
-                    if (i < len(dList) - 1):
-                        sTmp = sTmp + ", "
-
-                Parent.SendTwitchMessage(sTmp)
-                Parent.SendDiscordMessage(sTmp)
+                Parent.SendTwitchMessage(death_message)
+                Parent.SendDiscordMessage(death_message)
                 
             else:
-                sTmp2 = ""
-                for i in range(0, len(dList)):
-                    if (i < len(dList) - 1):
-                        sTmp2 = sTmp2 + dList[i] + ", "
+                death_message = ""
+                for i in range(0, len(dead_heisters)):
+                    if (i < len(dead_heisters) - 1):
+                        death_message = death_message + dead_heisters[i] + ", "
                     else:
-                        sTmp2 = "and " + dList[i] + sTmp
-                Parent.SendTwitchMessage(sTmp2)
-                Parent.SendDiscordMessage(sTmp2)
+                        death_message = "and " + dead_heisters[i] + death_message
+
+                Parent.SendTwitchMessage(death_message)
+                Parent.SendDiscordMessage(death_message)
                 
         heisters = []
         heisters_inputs = []
