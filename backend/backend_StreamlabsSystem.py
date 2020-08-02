@@ -27,6 +27,10 @@ tick_refresh_rate = None                                                        
 last_tick = None   
 
 #fish related
+fish_minimum_payout = None
+fish_maximum_payout = None
+fish_catch_chance = None
+fish_event_start_permission = None
 fish_event_active = None
 fish_size_record = None
 fish_user_record = None 
@@ -34,8 +38,8 @@ fish_user_record = None
 #heist related
 heist_user_limit = None
 heist_cooldown = None                                                                                                       #time between heists
-time_to_next_heist = None                                                                                                       #timer till next heist
-time_to_next_time_active = None
+next_heist_start_time = None                                                                                                       #timer till next heist
+heist_active = None
 heist_join_time = None                                                                                                       #time to enter heist
 heist_start_time = None                                                                                                       #timer till heist starts
 heist_start_time_active = None
@@ -45,18 +49,13 @@ heisters_inputs = None                                                          
 previous_heisters = None                                                                                                         #list of names that have modified win chances
 previous_heisters_chance = None                                                                                                        #list of chances to win for each modified name
 
-deaths = None
+# Points Per Message Variables
+points_per_message = None
 
 #---------------------------------------
 #   [Required] Intialize Data 
 #---------------------------------------
 def Init():
-    """
-        Init is a required function and is called the script is being loaded into memory
-        and becomes active. In here you can initialize any data your script will require,
-        for example read the settings file for saved settings.
-    """
-
     #   GLOBALS
     global settings_path
     global settings
@@ -69,12 +68,16 @@ def Init():
     
     global last_tick
 
+    global fish_minimum_payout
+    global fish_maximum_payout
+    global fish_catch_chance
+    global fish_event_start_permission
     global fish_event_active
     global fish_size_record
     global fish_user_record
 
-    global time_to_next_heist
-    global time_to_next_time_active
+    global next_heist_start_time
+    global heist_active
     global heist_start_time
     global heist_start_time_active
 
@@ -83,7 +86,10 @@ def Init():
     global previous_heisters
     global previous_heisters_chance
 
-    global deaths
+    global heist_payout
+    global heist_user_limit
+
+    global points_per_message
 
     #   CODE
     with codecs.open(settings_path, encoding="utf-8-sig", mode="r") as settings_file:
@@ -91,16 +97,37 @@ def Init():
         
     if (settings != None):
         tick_refresh_rate = int(settings['tick_refresh_rate'])
+
+        fish_minimum_payout = int(settings['fish_minimum_value'])
+        fish_maximum_payout = int(settings['fish_maximum_value'])
+        fish_catch_chance = float(settings['fish_catch_chance'])
+        fish_event_start_permission = settings['fish_permission'].split(',')
         
         heist_user_limit = int(settings['heist_user_limit'])
         heist_join_time = int(settings['heist_join_time'])
         heist_cooldown = int(settings['heist_cooldown'])
+
+        heist_payout = float(settings['heist_payout'])
+        heist_user_limit = int(settings['heist_user_limit'])
+
+        points_per_message = int(settings['points_per_message'])
+
     else:
         tick_refresh_rate = 5
+
+        fish_minimum_payout = 10
+        fish_maximum_payout = 40
+        fish_catch_chance = 0.25
+        fish_event_start_permission = ['Tiltasaurus','I_am_steak']
 
         heist_user_limit = 15
         heist_join_time = 60
         heist_cooldown = 600
+
+        heist_payout = 1.25
+        heist_user_limit = 15
+
+        points_per_message = 5
 
     last_tick = t.time() - tick_refresh_rate
 
@@ -108,8 +135,8 @@ def Init():
     fish_size_record = 0
     fish_user_record = ""
 
-    time_to_next_heist = t.time()
-    time_to_next_time_active = False
+    next_heist_start_time = t.time()
+    heist_active = False
     heist_start_time = t.time()
     heist_start_time_active = False
 
@@ -117,88 +144,82 @@ def Init():
     heisters_inputs = []
     previous_heisters = []
     previous_heisters_chance = []
+
     return
 
 #---------------------------------------
 #   [Required] Execute Data / Process Messages
 #---------------------------------------
-def Execute(data): #TO EDIT
-    """
-        Execute is a required function that gets called when there is new data to be
-        processed. Like a Twitch or Discord chat messages or even raw data send from
-        Twitch IRC. This function will _not_ be called when the user disabled the script
-        with the switch on the user interface.
-    """
-    
-    #   CODE
+def Execute(data):
     if (data.IsChatMessage() and data.IsFromTwitch()):
-        points_on_chat_message(data.User, data.Message)
+        points_per_chat_message(data.User, data.Message)
         fish(data)
         heist(data)
+
     return
 
-def points_on_chat_message(user, message):
+def points_per_chat_message(user, message):
+    global points_per_message
+
     try:
-        #   STEP 1: EGG
         if (message == "I am steak"):
             Parent.SendTwitchMessage("VoHiYo")
 
             if (user == "i_am_steak"):
                 Parent.AddPoints(user, 500)
 
-        #   STEP 2: POINTS PER CHAT MESSAGE
         if (message[0] != '!'):
-            Parent.AddPoints(user, rand.randint(3, 10))
+            Parent.AddPoints(user, points_per_message)
 
     except Exception as e:
         Parent.SendTwitchWhisper("i_am_steak", e.message)
         Parent.SendTwitchWhisper("i_am_not_steak", e.message)
+
     return
    
 def fish(data):
+    global fish_minimum_payout
+    global fish_maximum_payout
+    global fish_catch_chance
+    global fish_event_start_permission
     global fish_event_active
     global fish_size_record
     global fish_user_record
 
-    #PART 1: FISH SWITCH
-    if (((data.User == "tiltasaurus") or (data.User == "i_am_steak") or (data.User == "i_am_not_steak")) and (data.Message == '!fish')):             #check if !fish
+    if (((data.User == "tiltasaurus") or (data.User == "i_am_steak") or (data.User == "i_am_not_steak")) and (data.Message == '!fish')):
         if (fish_event_active == False):
-            fish_event_active = True                                                                                       #allow fish to be caught
-            sTmp = "A school of fish is passing through a lake nearby! Type any message with 'fish' in it to see if you can catch one."
-            Parent.SendTwitchMessage(sTmp)
-            Parent.SendDiscordMessage(sTmp)
+            fish_event_active = True
+            response_string = "A school of fish is passing through a lake nearby! Type any message with 'fish' in it to see if you can catch one."
+            Parent.SendTwitchMessage(response_string)
+            Parent.SendDiscordMessage(response_string)
         else:
-            sTmp = "The school of fish has passed! The largest fish caught was worth " + str(fish_size_record) + " and was caught by " + fish_user_record + "."
-            Parent.SendTwitchMessage(sTmp)
-            Parent.SendDiscordMessage(sTmp)
+            response_string = "The school of fish has passed! The largest fish caught was worth " + str(fish_size_record) + " and was caught by " + fish_user_record + "."
+            Parent.SendTwitchMessage(response_string)
+            Parent.SendDiscordMessage(response_string)
             fish_event_active = False
             fish_size_record = 0
             fish_user_record = ""
 
-    #PART 2: FISH
     if (fish_event_active == True):
-        if ((("SabaPing" in data.Message) or ("fish" in data.Message)) and (data.Message != "fish")):                       #check if message contains "fish"
-                
-            i = rand.randint(1, 200)
-            rand.seed(t.time() + fish_size_record + i)
+        if ((("SabaPing" in data.Message) or ("fish" in data.Message)) and (data.Message != "fish")):
+            rand.seed(t.time() + fish_size_record + rand.randint(1, 200))
+            if (rand.randint(1, 100) < int(fish_catch_chance * 100)):
+                fish_size = rand.randint(fish_minimum_payout, fish_maximum_payout)
+                response_string = data.User + " caught a rare Tilted PowerUpL SabaPing PowerUpR worth " + str(fish_size) + " points!"
+                Parent.SendTwitchMessage(response_string)
 
-            i = rand.randint(1, 100)                                                                                #45% chance to catch a fish
-            if (i < 25):
-                i = rand.randint(1, 100)                                                                            #get fish size
-                sTmp = data.User + " found a rare Tilted PowerUpL SabaPing PowerUpR worth " + str(i) + " points!"
-                Parent.SendTwitchMessage(sTmp)
+                Parent.AddPoints(data.User, fish_size)
 
-                Parent.AddPoints(data.User, i)
-
-                if (i > fish_size_record):                                                                                  #check if largest fish
-                    fish_size_record = i
+                if (fish_size > fish_size_record):
+                    fish_size_record = fish_size
                     fish_user_record = data.User
+
+    return
 
 def heist(data):
     global heist_user_limit
     global heist_cooldown
-    global time_to_next_heist
-    global time_to_next_time_active
+    global next_heist_start_time
     global heist_join_time
     global heist_start_time
     global heist_start_time_active
@@ -209,69 +230,54 @@ def heist(data):
     global previous_heisters_chance
 
     ### CODE
-    if (len(data.Message) > 7):
-        sTmp = ""
-        for i in range(0, 6):
-            sTmp = sTmp + data.Message[i]
+    if (data.Message.find('!heist') == 0):
+        message = data.Message.split(' ')
+        if (message[0] == "!heist"):
+            if (next_heist_start_time > t.time()):
+                minutes_to_next_heist = int(next_heist_start_time - t.time())/60
+                response_string = data.User + " you will be able to heist again in " + str(minutes_to_next_heist) + " minutes"
+                Parent.SendTwitchMessage(response_string)
+                Parent.SendDiscordMessage(response_string)
 
-        if ((sTmp == "!heist") and (time_to_next_time_active == False)):
-            sTmp = ""
-            for i in range(7, len(data.Message)):
-                sTmp = sTmp + data.Message[i]
+            else:
+                try:
+                    heist_amount = int(message[1])
 
-            try:
-                iTmp = int(sTmp)
-                lTmp = long(sTmp)
+                    if ((len(heisters) == 0) and (heist_amount > 0)):
+                        response_string = data.User + " is trying to get a team together in order to hit the nearest bank. In order to join type !heist (amount)"
+                        Parent.SendTwitchMessage(response_string)
+                        Parent.SendDiscordMessage(response_string)
 
-                if ((len(heisters) == 0) and (iTmp > 0)):
-                    sTmp = data.User + " is trying to get a team together in order to hit the nearest bank. In order to join type !heist (amount)."
-                    Parent.SendTwitchMessage(sTmp)
-                    Parent.SendDiscordMessage(sTmp)
+                        heist_start_time = t.time() + heist_join_time
+                        heist_start_time_active = True
 
-                    heist_start_time = t.time() + heist_join_time
-                    heist_start_time_active = True
+                    if ((len(heisters) < heist_user_limit) and (data.User not in heisters) and (heist_amount > 0)):
+                        if (Parent.GetPoints(data.User) >= long(heist_amount)):
+                            Parent.RemovePoints(data.User, long(heist_amount))
 
-                if ((len(heisters) <= heist_user_limit) and (data.User not in heisters) and (iTmp > 0)):
+                            heisters_inputs.append(heist_amount)
+                            heisters.append(data.User)
 
-                    if (Parent.GetPoints(data.User) > lTmp):
-                        Parent.RemovePoints(data.User, lTmp)
+                            if (len(heisters) > 1):
+                                response_string = data.User + " joined the heist!"
+                                Parent.SendTwitchMessage(response_string)
+                                Parent.SendDiscordMessage(response_string)
 
-                        heisters_inputs.append(iTmp)
-                        heisters.append(data.User)
-
-                        if (len(heisters) > 1):
-                            sTmp2 = data.User + " joined the heist!"
-                            Parent.SendTwitchMessage(sTmp2)
-                            Parent.SendDiscordMessage(sTmp2)
-
-            except:
-                sTmp = ""
-        elif ((sTmp == "!heist") and (time_to_next_time_active == True)):
-            fTmp = time_to_next_heist - t.time()
-            iMin = int(fTmp)/60
-            sTmp = data.User + " you will be able to heist again in " + str(iMin) + " minutes"
-            Parent.SendTwitchMessage(sTmp)
-            Parent.SendDiscordMessage(sTmp)
+                except:
+                    Parent.SendTwitchMessage(data.User + ' the value you entered is not valid')
+                    Parent.SendDiscordMessage(data.User + ' the value you entered is not valid')
     return
 
 #---------------------------------------
 #   [Required] Tick Function
 #---------------------------------------
 def Tick(): #DONE
-    """
-        Tick is a required function and will be called every time the program progresses.
-        This can be used for example to create simple timer if you want to do let the
-        script do something on a timed basis.This function will _not_ be called when the
-        user disabled the script with the switch on the user interface.
-    """
-
     #   GLOBALS
     global tick_refresh_rate
     global last_tick
 
-    tTime = t.time()
-
     #   CODE
+    tTime = t.time()
     if (last_tick + tick_refresh_rate <= tTime):
         last_tick = tTime
         heistTick()
@@ -282,8 +288,8 @@ def heistTick():
     #   GLOBALS
     global heist_user_limit
     global heist_cooldown
-    global time_to_next_heist
-    global time_to_next_time_active
+    global next_heist_start_time
+    global heist_active
     global heist_join_time
     global heist_start_time
     global heist_start_time_active
@@ -294,16 +300,16 @@ def heistTick():
     global previous_heisters_chance
 
     ### CODE
-    if ((time_to_next_time_active == True) and (t.time() > time_to_next_heist)):
-        time_to_next_time_active = False
-        sTmp = "It looks like the cops have given up searching for the perpetrators. You can now heist again using !heist (amount)."
-        Parent.SendTwitchMessage(sTmp)
-        Parent.SendDiscordMessage(sTmp)
+    if ((heist_active == True) and (t.time() > next_heist_start_time)):
+        heist_active = False
+        response_string = "It looks like the cops have given up searching for the perpetrators. You can now heist again using !heist (amount)."
+        Parent.SendTwitchMessage(response_string)
+        Parent.SendDiscordMessage(response_string)
 
     elif ((heist_start_time_active == True) and (t.time() > heist_start_time)):
         heist_start_time_active = False
-        time_to_next_heist = t.time() + heist_cooldown
-        time_to_next_time_active = True
+        next_heist_start_time = t.time() + heist_cooldown
+        heist_active = True
 
         sList = []
         dList = []
@@ -456,7 +462,3 @@ def heistTick():
         heisters_inputs = []
 
     return
-
-#--
-#
-#--
